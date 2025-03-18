@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spanning Tree Protocol (STP) Features</title>
+    <style>
+        body {
+            font-family: "Century Gothic", sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #0056b3;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            color: #0056b3;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h3 {
+            font-size: 1.4em;
+            color: #0056b3;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-left: 20px;
+        }
+
+        pre {
+            background-color: #eee;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+
+        code {
+            font-family: monospace;
+        }
+
+        .warning {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0056b3;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Spanning Tree Protocol (STP) Features Explained</h1>
+
+    <p>In network environments using Spanning Tree Protocol (STP), additional features help enhance stability and prevent loops. Below are four important STP enhancements used to protect the network from misconfigurations and potential issues:</p>
+
+    <h2>1. Root Guard</h2>
+
+    <h3>Purpose:</h3>
+    <p>Root Guard prevents unauthorized switches from becoming the Root Bridge in an STP topology. This helps maintain the stability of the network by ensuring that only designated switches can act as the Root Bridge.</p>
+
+    <h3>How It Works:</h3>
+    <ul>
+        <li>Root Guard is enabled on designated ports (ports that point away from the Root Bridge).</li>
+        <li>If a superior BPDU (Bridge Protocol Data Unit) is received on a Root Guard-enabled port (meaning another switch is trying to claim the Root Bridge role), the port is placed into root-inconsistent (blocked) state.</li>
+        <li>As long as superior BPDUs are received, the port remains blocked.</li>
+        <li>When the superior BPDUs stop coming, the port is automatically re-enabled.</li>
+    </ul>
+
+    <h3>Configuration:</h3>
+    <pre><code>
+Switch(config)# interface GigabitEthernet1/0/1
+Switch(config-if)# spanning-tree guard root
+    </code></pre>
+
+    <h3>Use Case:</h3>
+    <ul>
+        <li>Preventing an unauthorized or misconfigured switch from disrupting the STP topology by becoming the Root Bridge.</li>
+        <li>Used in access-layer switches where end devices are connected.</li>
+    </ul>
+
+    <h2>2. Loop Guard</h2>
+
+    <h3>Purpose:</h3>
+    <p>Loop Guard prevents switch loops that can occur when a switch stops receiving BPDUs on a non-designated port.</p>
+
+    <h3>How It Works:</h3>
+    <ul>
+        <li>Loop Guard is enabled on non-designated ports (blocking or alternate ports).</li>
+        <li>If the switch stops receiving BPDUs on a Loop Guard-enabled port, it moves the port to loop-inconsistent state instead of transitioning to forwarding mode.</li>
+        <li>Once BPDUs resume, the port automatically recovers.</li>
+    </ul>
+
+    <h3>Configuration:</h3>
+    <pre><code>
+Switch(config)# interface GigabitEthernet1/0/1
+Switch(config-if)# spanning-tree guard loop
+    </code></pre>
+
+    <h3>Use Case:</h3>
+    <ul>
+        <li>Protecting against unidirectional link failures that could cause a switch to think it has lost connection to its neighbors and start forwarding traffic incorrectly.</li>
+        <li>Used in redundant links between switches.</li>
+    </ul>
+
+    <h2>3. BPDU Filter</h2>
+
+    <h3>Purpose:</h3>
+    <p>BPDU Filter prevents BPDUs from being sent or received on a port, effectively disabling STP on that port.</p>
+
+    <h3>How It Works:</h3>
+    <ul>
+        <li>Can be applied globally or per interface.</li>
+        <li>When enabled globally, it stops BPDU transmission on PortFast-enabled interfaces.</li>
+        <li>When enabled on an interface, it stops sending/receiving BPDUs completely.</li>
+    </ul>
+
+    <h3>Configuration:</h3>
+    <p>👉 Global Configuration (affects all PortFast-enabled ports):</p>
+    <pre><code>
+Switch(config)# spanning-tree portfast bpdufilter default
+    </code></pre>
+
+    <p>👉 Per Interface Configuration:</p>
+    <pre><code>
+Switch(config)# interface GigabitEthernet1/0/1
+Switch(config-if)# spanning-tree bpdufilter enable
+    </code></pre>
+
+    <h3>Use Case:</h3>
+    <ul>
+        <li>Applied to access ports where only end devices (not switches) are connected to avoid accidental STP topology changes.</li>
+        <li>Should not be used on trunk links as it can cause loops if a switch is connected.</li>
+    </ul>
+
+    <p><span class="warning">🚨 Warning:</span></p>
+    <ul>
+        <li>If a switch is mistakenly connected to a BPDU Filter-enabled port, it will not receive BPDUs, potentially leading to loops.</li>
+        <li>BPDU Filter is risky when used on interfaces where switches might be connected.</li>
+    </ul>
+
+    <h2>4. BPDU Guard</h2>
+
+    <h3>Purpose:</h3>
+    <p>BPDU Guard automatically disables a port if it receives BPDUs, ensuring that STP is not unexpectedly triggered on access ports.</p>
+
+    <h3>How It Works:</h3>
+    <ul>
+        <li>BPDU Guard is usually enabled on PortFast-enabled interfaces.</li>
+        <li>If a BPDU is received, the port is placed in err-disabled state to prevent possible STP misconfigurations.</li>
+        <li>Manual intervention is required to bring the port back up.</li>
+    </ul>
+
+    <h3>Configuration:</h3>
+    <p>👉 Global Configuration (affects all PortFast-enabled ports):</p>
+    <pre><code>
+Switch(config)# spanning-tree portfast bpduguard default
+    </code></pre>
+
+    <p>👉 Per Interface Configuration:</p>
+    <pre><code>
+Switch(config)# interface GigabitEthernet1/0/1
+Switch(config-if)# spanning-tree bpduguard enable
+    </code></pre>
+
+    <h3>Use Case:</h3>
+    <ul>
+        <li>Used on access ports to prevent accidental or malicious connection of switches that could alter the STP topology.</li>
+        <li>Protects against rogue switch connections.</li>
+    </ul>
+
+    <p><span class="warning">🚨 Warning:</span></p>
+    <ul>
+        <li>If a switch is connected to a BPDU Guard-enabled port, the port will shut down immediately.</li>
+        <li>Requires manual intervention to re-enable.</li>
+    </ul>
+
+    <h2>Comparison Table</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Purpose</th>
+                <th>Action Taken When Condition is Met</th>
+                <th>Best Use Case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Root Guard</td>
+                <td>Prevents unauthorized Root Bridge election</td>
+                <td>Puts port in root-inconsistent (blocking) state</td>
+                <td>Used on designated ports to ensure topology stability</td>
+            </tr>
+            <tr>
+                <td>Loop Guard</td>
+                <td>Prevents loops due to unidirectional links</td>
+                <td>Puts port in loop-inconsistent state</td>
+                <td>Used on blocking/alternate ports to prevent unexpected forwarding</td>
+            </tr>
+            <tr>
+                <td>BPDU Filter</td>
+                <td>Blocks STP BPDUs on a port</td>
+                <td>Stops sending/receiving BPDUs</td>
+                <td>Used on access ports to prevent STP processing (use with caution)</td>
+            </tr>
+            <tr>
+                <td>BPDU Guard</td>
+                <td>Prevents STP activation on access ports</td>
+                <td>Disables the port (err-disabled state)</td>
+                <td>Used on PortFast-enabled access ports to prevent rogue switches</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Conclusion</h2>
+
+    <p>These four STP protection mechanisms help ensure network stability, prevent loops, and maintain a predictable topology. Implementing them correctly in your network design will improve reliability while reducing risks caused by misconfigurations or unauthorized devices.</p>
+
+</body>
+</html>
